@@ -142,6 +142,284 @@
 
 
 
+// const express = require("express");
+// const cors = require("cors");
+// const { MongoClient, ObjectId } = require("mongodb");
+// require("dotenv").config();
+// const Stripe = require("stripe");
+
+// const app = express();
+// const port = process.env.PORT || 3000;
+
+// /* ---------- MIDDLEWARE ---------- */
+// app.use(cors());
+// app.use(express.json());
+
+// /* ---------- STRIPE ---------- */
+// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+// /* ---------- MONGODB ---------- */
+// const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster9.jsim6tq.mongodb.net/?retryWrites=true&w=majority`;
+
+// const client = new MongoClient(uri);
+
+// let mealCollection;
+// let orderCollection;
+// let paymentCollection;
+// let isConnected = false;
+
+// /* ---------- DB CONNECT ---------- */
+// async function connectDB() {
+//   try {
+//     if (!isConnected) {
+//       await client.connect(); // ✅ Safe for Vercel
+//       isConnected = true;
+//       console.log("✅ MongoDB Connected");
+//     }
+
+//     const db = client.db("menu-db");
+
+//     mealCollection = db.collection("meals");
+//     orderCollection = db.collection("orders");
+//     paymentCollection = db.collection("payments");
+
+//   } catch (error) {
+//     console.log("❌ DB Error:", error);
+//   }
+// }
+
+// connectDB();
+
+// /* ---------- ROUTES ---------- */
+
+// // Test Route
+// app.get("/", (req, res) => {
+//   res.send("🚀 Server Running Successfully!");
+// });
+
+
+// /* ---------- MEALS ---------- */
+
+// // Get All Meals
+// app.get("/meals", async (req, res) => {
+//   try {
+//     const { chefId } = req.query;
+
+//     const query = chefId ? { chefId } : {};
+
+//     const result = await mealCollection.find(query).toArray();
+
+//     res.send(result);
+//   } catch (error) {
+//     res.status(500).send({ error: "Failed to load meals" });
+//   }
+// });
+
+
+// // Get Single Meal
+// app.get("/meals/:id", async (req, res) => {
+//   try {
+//     const id = req.params.id;
+
+//     const result = await mealCollection.findOne({
+//       _id: new ObjectId(id),
+//     });
+
+//     if (!result) {
+//       return res.status(404).send({ message: "Meal Not Found" });
+//     }
+
+//     res.send(result);
+//   } catch (error) {
+//     res.status(500).send({ error: "Invalid ID" });
+//   }
+// });
+
+
+// // Add Meal
+// app.post("/meals", async (req, res) => {
+//   try {
+//     const meal = req.body;
+
+//     const result = await mealCollection.insertOne(meal);
+
+//     res.send({
+//       message: "Meal Added Successfully",
+//       id: result.insertedId,
+//     });
+
+//   } catch (error) {
+//     res.status(500).send({ error: "Failed to add meal" });
+//   }
+// });
+
+
+// /* ---------- ORDERS ---------- */
+
+// // Create Order
+// app.post("/orders", async (req, res) => {
+//   try {
+//     const { email, foodId, foodName, price } = req.body;
+
+//     if (!email || !foodId || !foodName || !price) {
+//       return res.status(400).send({ error: "Missing Info" });
+//     }
+
+//     const order = {
+//       email,
+//       foodId,
+//       foodName,
+//       price,
+//       paid: false,
+//       transactionId: null,
+//       date: new Date(),
+//     };
+
+//     const result = await orderCollection.insertOne(order);
+
+//     res.send({
+//       message: "Order Created",
+//       orderId: result.insertedId,
+//     });
+
+//   } catch (error) {
+//     res.status(500).send({ error: "Order Failed" });
+//   }
+// });
+
+
+// // Get Single Order
+// app.get("/orders/:id", async (req, res) => {
+//   try {
+//     const id = req.params.id;
+
+//     const result = await orderCollection.findOne({
+//       _id: new ObjectId(id),
+//     });
+
+//     if (!result) {
+//       return res.status(404).send({ message: "Order Not Found" });
+//     }
+
+//     res.send(result);
+
+//   } catch (error) {
+//     res.status(500).send({ error: "Invalid Order ID" });
+//   }
+// });
+
+
+// /* ---------- STRIPE ---------- */
+
+// app.post("/create-checkout-session", async (req, res) => {
+//   try {
+//     const { price, foodName, orderId } = req.body;
+
+//     if (!price || !foodName || !orderId) {
+//       return res.status(400).send({ error: "Missing Info" });
+//     }
+
+//     const session = await stripe.checkout.sessions.create({
+//       payment_method_types: ["card"],
+
+//       line_items: [
+//         {
+//           price_data: {
+//             currency: "usd",
+//             product_data: {
+//               name: foodName,
+//             },
+//             unit_amount: price * 100,
+//           },
+//           quantity: 1,
+//         },
+//       ],
+
+//       mode: "payment",
+
+//       success_url: `https://your-frontend.vercel.app/payment-success/${orderId}`,
+//       cancel_url: `https://your-frontend.vercel.app/payment/${orderId}`,
+//     });
+
+//     res.send({ url: session.url });
+
+//   } catch (error) {
+//     res.status(500).send({ error: error.message });
+//   }
+// });
+
+
+// /* ---------- PAYMENTS ---------- */
+
+// // Save Payment
+// app.post("/payments", async (req, res) => {
+//   try {
+//     const { email, foodName, price, transactionId, orderId } = req.body;
+
+//     if (!email || !transactionId || !orderId) {
+//       return res.status(400).send({ error: "Missing Payment Info" });
+//     }
+
+//     const payment = {
+//       email,
+//       foodName,
+//       price,
+//       transactionId,
+//       date: new Date(),
+//     };
+
+//     const paymentResult = await paymentCollection.insertOne(payment);
+
+//     const orderResult = await orderCollection.updateOne(
+//       { _id: new ObjectId(orderId) },
+//       {
+//         $set: {
+//           paid: true,
+//           transactionId,
+//         },
+//       }
+//     );
+
+//     res.send({
+//       message: "Payment Success",
+//       paymentResult,
+//       orderResult,
+//     });
+
+//   } catch (error) {
+//     res.status(500).send({ error: "Payment Failed" });
+//   }
+// });
+
+
+// /* ---------- PAYMENT HISTORY ---------- */
+
+// app.get("/payments", async (req, res) => {
+//   try {
+//     const email = req.query.email;
+
+//     if (!email) {
+//       return res.status(400).send({ error: "Email Required" });
+//     }
+
+//     const result = await paymentCollection
+//       .find({ email })
+//       .toArray();
+
+//     res.send(result);
+
+//   } catch (error) {
+//     res.status(500).send({ error: "Failed to Load Payments" });
+//   }
+// });
+
+
+// /* ---------- SERVER ---------- */
+
+// app.listen(port, () => {
+//   console.log(`🚀 Server Running on Port ${port}`);
+// });
+
 const express = require("express");
 const cors = require("cors");
 const { MongoClient, ObjectId } = require("mongodb");
@@ -155,27 +433,34 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+/* ---------- DEBUG ENV ---------- */
+console.log("DB USER:", process.env.DB_USERNAME);
+console.log("DB PASS:", process.env.DB_PASSWORD ? "LOADED" : "NOT FOUND");
+console.log("STRIPE:", process.env.STRIPE_SECRET_KEY ? "LOADED" : "NOT FOUND");
+
 /* ---------- STRIPE ---------- */
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-/* ---------- MONGODB ---------- */
-const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster9.jsim6tq.mongodb.net/?retryWrites=true&w=majority`;
+/* ---------- MONGODB URI ---------- */
+const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster9.jsim6tq.mongodb.net/menu-db?retryWrites=true&w=majority`;
 
-const client = new MongoClient(uri);
+/* ---------- MONGO CLIENT ---------- */
+const client = new MongoClient(uri, {
+  serverSelectionTimeoutMS: 5000,
+});
 
+/* ---------- COLLECTIONS ---------- */
 let mealCollection;
 let orderCollection;
 let paymentCollection;
 let isConnected = false;
 
-/* ---------- DB CONNECT ---------- */
+/* ---------- CONNECT DB ---------- */
 async function connectDB() {
+  if (isConnected) return;
+
   try {
-    if (!isConnected) {
-      await client.connect(); // ✅ Safe for Vercel
-      isConnected = true;
-      console.log("✅ MongoDB Connected");
-    }
+    await client.connect();
 
     const db = client.db("menu-db");
 
@@ -183,51 +468,49 @@ async function connectDB() {
     orderCollection = db.collection("orders");
     paymentCollection = db.collection("payments");
 
+    isConnected = true;
+
+    console.log("✅ MongoDB Connected Successfully");
   } catch (error) {
-    console.log("❌ DB Error:", error);
+    console.error("❌ MongoDB Connection Failed:");
+    console.error(error.message);
+    throw error;
   }
 }
 
-connectDB();
+/* ---------- ROOT ---------- */
 
-/* ---------- ROUTES ---------- */
-
-// Test Route
 app.get("/", (req, res) => {
   res.send("🚀 Server Running Successfully!");
 });
 
-
 /* ---------- MEALS ---------- */
 
-// Get All Meals
 app.get("/meals", async (req, res) => {
   try {
-    const { chefId } = req.query;
+    await connectDB();
 
-    const query = chefId ? { chefId } : {};
-
-    const result = await mealCollection.find(query).toArray();
+    const result = await mealCollection.find().toArray();
 
     res.send(result);
   } catch (error) {
-    res.status(500).send({ error: "Failed to load meals" });
+    console.error("Meals Error:", error.message);
+
+    res.status(500).send({
+      error: "Database Connection Failed",
+    });
   }
 });
 
+/* ---------- SINGLE MEAL ---------- */
 
-// Get Single Meal
 app.get("/meals/:id", async (req, res) => {
   try {
-    const id = req.params.id;
+    await connectDB();
 
     const result = await mealCollection.findOne({
-      _id: new ObjectId(id),
+      _id: new ObjectId(req.params.id),
     });
-
-    if (!result) {
-      return res.status(404).send({ message: "Meal Not Found" });
-    }
 
     res.send(result);
   } catch (error) {
@@ -235,90 +518,38 @@ app.get("/meals/:id", async (req, res) => {
   }
 });
 
+/* ---------- ADD MEAL ---------- */
 
-// Add Meal
 app.post("/meals", async (req, res) => {
   try {
-    const meal = req.body;
+    await connectDB();
 
-    const result = await mealCollection.insertOne(meal);
+    const result = await mealCollection.insertOne(req.body);
 
-    res.send({
-      message: "Meal Added Successfully",
-      id: result.insertedId,
-    });
-
+    res.send(result);
   } catch (error) {
-    res.status(500).send({ error: "Failed to add meal" });
+    res.status(500).send({ error: "Insert Failed" });
   }
 });
 
-
 /* ---------- ORDERS ---------- */
 
-// Create Order
 app.post("/orders", async (req, res) => {
   try {
-    const { email, foodId, foodName, price } = req.body;
+    await connectDB();
 
-    if (!email || !foodId || !foodName || !price) {
-      return res.status(400).send({ error: "Missing Info" });
-    }
+    const result = await orderCollection.insertOne(req.body);
 
-    const order = {
-      email,
-      foodId,
-      foodName,
-      price,
-      paid: false,
-      transactionId: null,
-      date: new Date(),
-    };
-
-    const result = await orderCollection.insertOne(order);
-
-    res.send({
-      message: "Order Created",
-      orderId: result.insertedId,
-    });
-
+    res.send(result);
   } catch (error) {
     res.status(500).send({ error: "Order Failed" });
   }
 });
 
-
-// Get Single Order
-app.get("/orders/:id", async (req, res) => {
-  try {
-    const id = req.params.id;
-
-    const result = await orderCollection.findOne({
-      _id: new ObjectId(id),
-    });
-
-    if (!result) {
-      return res.status(404).send({ message: "Order Not Found" });
-    }
-
-    res.send(result);
-
-  } catch (error) {
-    res.status(500).send({ error: "Invalid Order ID" });
-  }
-});
-
-
 /* ---------- STRIPE ---------- */
 
 app.post("/create-checkout-session", async (req, res) => {
   try {
-    const { price, foodName, orderId } = req.body;
-
-    if (!price || !foodName || !orderId) {
-      return res.status(400).send({ error: "Missing Info" });
-    }
-
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
 
@@ -327,9 +558,9 @@ app.post("/create-checkout-session", async (req, res) => {
           price_data: {
             currency: "usd",
             product_data: {
-              name: foodName,
+              name: req.body.foodName,
             },
-            unit_amount: price * 100,
+            unit_amount: req.body.price * 100,
           },
           quantity: 1,
         },
@@ -337,84 +568,31 @@ app.post("/create-checkout-session", async (req, res) => {
 
       mode: "payment",
 
-      success_url: `https://your-frontend.vercel.app/payment-success/${orderId}`,
-      cancel_url: `https://your-frontend.vercel.app/payment/${orderId}`,
+      success_url: "http://localhost:5173/success",
+      cancel_url: "http://localhost:5173/cancel",
     });
 
     res.send({ url: session.url });
-
   } catch (error) {
     res.status(500).send({ error: error.message });
   }
 });
 
-
 /* ---------- PAYMENTS ---------- */
 
-// Save Payment
 app.post("/payments", async (req, res) => {
   try {
-    const { email, foodName, price, transactionId, orderId } = req.body;
+    await connectDB();
 
-    if (!email || !transactionId || !orderId) {
-      return res.status(400).send({ error: "Missing Payment Info" });
-    }
+    const result = await paymentCollection.insertOne(req.body);
 
-    const payment = {
-      email,
-      foodName,
-      price,
-      transactionId,
-      date: new Date(),
-    };
-
-    const paymentResult = await paymentCollection.insertOne(payment);
-
-    const orderResult = await orderCollection.updateOne(
-      { _id: new ObjectId(orderId) },
-      {
-        $set: {
-          paid: true,
-          transactionId,
-        },
-      }
-    );
-
-    res.send({
-      message: "Payment Success",
-      paymentResult,
-      orderResult,
-    });
-
+    res.send(result);
   } catch (error) {
     res.status(500).send({ error: "Payment Failed" });
   }
 });
 
-
-/* ---------- PAYMENT HISTORY ---------- */
-
-app.get("/payments", async (req, res) => {
-  try {
-    const email = req.query.email;
-
-    if (!email) {
-      return res.status(400).send({ error: "Email Required" });
-    }
-
-    const result = await paymentCollection
-      .find({ email })
-      .toArray();
-
-    res.send(result);
-
-  } catch (error) {
-    res.status(500).send({ error: "Failed to Load Payments" });
-  }
-});
-
-
-/* ---------- SERVER ---------- */
+/* ---------- START SERVER ---------- */
 
 app.listen(port, () => {
   console.log(`🚀 Server Running on Port ${port}`);
