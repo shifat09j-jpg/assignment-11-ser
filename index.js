@@ -18,13 +18,13 @@
 // const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster9.jsim6tq.mongodb.net/?retryWrites=true&w=majority`;
 // const client = new MongoClient(uri);
 
-// let mealCollection, orderCollection, paymentCollection;
+// let mealsCollection, orderCollection, paymentCollection;
 
 // async function connectDB() {
 //   try {
 //     // await client.connect();
 //     const db = client.db("menu-db");
-//     mealCollection = db.collection("meals");
+//     mealsCollection = db.collection("meals");
 //     orderCollection = db.collection("orders");
 //     paymentCollection = db.collection("payments");
 //     console.log("✅ MongoDB Connected");
@@ -43,18 +43,18 @@
 // app.get("/meals", async (req, res) => {
 //   const { chefId } = req.query;
 //   let query = chefId ? { chefId } : {};
-//   const result = await mealCollection.find(query).toArray();
+//   const result = await mealsCollection.find(query).toArray();
 //   res.send(result);
 // });
 
 // app.get("/meals/:id", async (req, res) => {
-//   const meal = await mealCollection.findOne({ _id: new ObjectId(req.params.id) });
+//   const meal = await mealsCollection.findOne({ _id: new ObjectId(req.params.id) });
 //   if (!meal) return res.status(404).send({ message: "Meal not found" });
 //   res.send(meal);
 // });
 
 // app.post("/meals", async (req, res) => {
-//   const result = await mealCollection.insertOne(req.body);
+//   const result = await mealsCollection.insertOne(req.body);
 //   res.send({ message: "Meal added", mealId: result.insertedId });
 // });
 
@@ -163,7 +163,7 @@
 
 // const client = new MongoClient(uri);
 
-// let mealCollection;
+// let mealsCollection;
 // let orderCollection;
 // let paymentCollection;
 // let isConnected = false;
@@ -179,7 +179,7 @@
 
 //     const db = client.db("menu-db");
 
-//     mealCollection = db.collection("meals");
+//     mealsCollection = db.collection("meals");
 //     orderCollection = db.collection("orders");
 //     paymentCollection = db.collection("payments");
 
@@ -207,7 +207,7 @@
 
 //     const query = chefId ? { chefId } : {};
 
-//     const result = await mealCollection.find(query).toArray();
+//     const result = await mealsCollection.find(query).toArray();
 
 //     res.send(result);
 //   } catch (error) {
@@ -217,23 +217,58 @@
 
 
 // // Get Single Meal
+// // app.get("/meals/:id", async (req, res) => {
+// //   try {
+// //     const { id } = req.params;
+
+// //     if (!ObjectId.isValid(id)) {
+// //       return res.status(400).json({ message: "Invalid meal ID" });
+// //     }
+
+// //     const meal = await mealsCollection.findOne({ _id: new ObjectId(id) });
+// //     if (!meal) {
+// //       return res.status(404).json({ message: "Meal not found" });
+// //     }
+
+// //     res.json(meal);
+// //   } catch (err) {
+// //     console.error("Error fetching meal:", err);
+// //     res.status(500).json({ message: "Internal server error" });
+// //   }
+// // });
+
+// // app.get("/meals/:id", async (req, res) => {
+// //   const id = req.params.id;
+
+// //   try {
+// //     const meal = await mealsCollection.findOne({ _id: new ObjectId(id) });
+// //     if (!meal) return res.status(404).json({ message: "Meal not found" });
+
+// //     res.json(meal);
+// //   } catch (err) {
+// //     console.error("Error fetching meal:", err);
+// //     res.status(500).json({ message: "Server error" });
+// //   }
+// // });
+
 // app.get("/meals/:id", async (req, res) => {
 //   try {
 //     const id = req.params.id;
+//     const meal = await mealsCollection.findOne({ _id: new ObjectId(id) });
 
-//     const result = await mealCollection.findOne({
-//       _id: new ObjectId(id),
-//     });
-
-//     if (!result) {
-//       return res.status(404).send({ message: "Meal Not Found" });
-//     }
-
-//     res.send(result);
-//   } catch (error) {
-//     res.status(500).send({ error: "Invalid ID" });
+//     if (!meal) return res.status(404).json({ message: "Meal not found" });
+//     res.json(meal);
+//   } catch (err) {
+//     console.error("Error fetching meal:", err);
+//     res.status(500).json({ message: "Server error" });
 //   }
 // });
+
+
+
+
+
+
 
 
 // // Add Meal
@@ -241,7 +276,7 @@
 //   try {
 //     const meal = req.body;
 
-//     const result = await mealCollection.insertOne(meal);
+//     const result = await mealsCollection.insertOne(meal);
 
 //     res.send({
 //       message: "Meal Added Successfully",
@@ -597,3 +632,4 @@ app.post("/payments", async (req, res) => {
 app.listen(port, () => {
   console.log(`🚀 Server Running on Port ${port}`);
 });
+
